@@ -1,5 +1,7 @@
 package utils
 
+import "math/bits"
+
 // BitList is a list that contains bits
 type BitList struct {
 	count int
@@ -116,4 +118,13 @@ func (bl *BitList) IterateBytes() <-chan byte {
 	}()
 
 	return res
+}
+
+// Count returns the number of one bits ("population count") in the BitList.
+func (bl *BitList) Count() int {
+	n := 0
+	for _, x := range bl.data {
+		n += bits.OnesCount32(uint32(x))
+	}
+	return n
 }
