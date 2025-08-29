@@ -130,11 +130,27 @@ func render(data []byte, vi *versionInfo, color barcode.ColorScheme) *qrcode {
 	lowestPenalty := ^uint(0)
 	lowestPenaltyIdx := -1
 	for i := 0; i < 8; i++ {
-		p := results[i].calcPenalty()
-		if p < lowestPenalty {
-			lowestPenalty = p
-			lowestPenaltyIdx = i
+		// Penalty calculation is expensive, especially rule 3.
+		// Skip further calculations the lowest penalty is exceeded.
+		p := results[i].calcPenaltyRule1()
+		if p >= lowestPenalty {
+			continue
 		}
+		p += results[i].calcPenaltyRule2()
+		if p >= lowestPenalty {
+			continue
+		}
+		p += results[i].calcPenaltyRule4()
+		if p >= lowestPenalty {
+			continue
+		}
+		p += results[i].calcPenaltyRule3()
+		if p >= lowestPenalty {
+			continue
+		}
+
+		lowestPenalty = p
+		lowestPenaltyIdx = i
 	}
 	return results[lowestPenaltyIdx]
 }
