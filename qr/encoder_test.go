@@ -2,6 +2,7 @@ package qr
 
 import (
 	"fmt"
+	"math/rand/v2"
 	"strings"
 	"testing"
 
@@ -195,4 +196,75 @@ func linediff(a, b string) string {
 	}
 
 	return diff.String()
+}
+
+func BenchmarkEncode(b *testing.B) {
+	source := new(rand.ChaCha8)
+	rand := rand.New(source)
+
+	genNumeric := func(n int) string {
+		var sb strings.Builder
+		for i := 0; i < n; i++ {
+			sb.WriteByte(byte('0' + rand.IntN(10)))
+		}
+		return sb.String()
+	}
+	genAlphaNumeric := func(n int) string {
+		const charset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
+
+		var sb strings.Builder
+		for i := 0; i < n; i++ {
+			sb.WriteByte(charset[rand.IntN(len(charset))])
+		}
+		return sb.String()
+	}
+	genBytes := func(n int) string {
+		b := make([]byte, n)
+		n, err := source.Read(b)
+		if n != len(b) || err != nil {
+			panic("read error")
+		}
+		return string(b)
+	}
+
+	benchmarks := []struct {
+		Encoding Encoding
+		ErrorCorrectionLevel
+		// Number of characters to be encoded in the benchmark.
+		Size int
+		// Function that randomly generates N characters to be encoded.
+		GenerateFunc func(int) string
+	}{
+		// Approximate the size of relatively small URLs as a common QR use-case.
+		{Numeric, L, 100, genNumeric},
+		{AlphaNumeric, L, 100, genAlphaNumeric},
+		{Unicode, L, 100, genBytes},
+
+		// Maximum size of encodings with minimal error correction.
+		{Numeric, L, 7089, genNumeric},
+		{AlphaNumeric, L, 4296, genAlphaNumeric},
+		{Unicode, L, 2953, genBytes},
+		// Maximum size of encodings with maximal error correction.
+		{Numeric, H, 1852, genNumeric},
+		{AlphaNumeric, H, 1273, genAlphaNumeric},
+		{Unicode, H, 784, genBytes},
+	}
+	for _, tc := range benchmarks {
+		// Data for benchmark is random, but consistent across runs.
+		source.Seed([32]byte{0xde, 0xad, 0xbe, 0xef})
+
+		name := fmt.Sprintf("mode=%s/ecl=%s/size=%d", tc.Encoding, tc.ErrorCorrectionLevel, tc.Size)
+		b.Run(name, func(b *testing.B) {
+			for b.Loop() {
+				b.StopTimer()
+				text := genNumeric(tc.Size)
+				b.StartTimer()
+
+				_, err := Encode(text, tc.ErrorCorrectionLevel, tc.Encoding)
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
 }
