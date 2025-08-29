@@ -5,13 +5,13 @@ import (
 	"image/color"
 	"math"
 
+	"github.com/bits-and-blooms/bitset"
 	"github.com/boombuler/barcode"
-	"github.com/boombuler/barcode/utils"
 )
 
 type qrcode struct {
 	dimension int
-	data      *utils.BitList
+	data      *bitset.BitSet
 	content   string
 	color     barcode.ColorScheme
 }
@@ -44,11 +44,15 @@ func (qr *qrcode) At(x, y int) color.Color {
 }
 
 func (qr *qrcode) Get(x, y int) bool {
-	return qr.data.GetBit(x*qr.dimension + y)
+	return qr.data.Test(uint(x*qr.dimension + y))
 }
 
 func (qr *qrcode) Set(x, y int, val bool) {
-	qr.data.SetBit(x*qr.dimension+y, val)
+	if val {
+		qr.data.Set(uint(x*qr.dimension + y))
+	} else {
+		qr.data.Clear(uint(x*qr.dimension + y))
+	}
 }
 
 func (qr *qrcode) calcPenalty() uint {
@@ -152,8 +156,8 @@ func (qr *qrcode) calcPenaltyRule3() uint {
 func (qr *qrcode) calcPenaltyRule4() uint {
 	totalNum := qr.data.Len()
 	trueCnt := 0
-	for i := 0; i < totalNum; i++ {
-		if qr.data.GetBit(i) {
+	for i := range totalNum {
+		if qr.data.Test(i) {
 			trueCnt++
 		}
 	}
@@ -166,7 +170,7 @@ func (qr *qrcode) calcPenaltyRule4() uint {
 func newBarCodeWithColor(dim int, color barcode.ColorScheme) *qrcode {
 	res := new(qrcode)
 	res.dimension = dim
-	res.data = utils.NewBitList(dim * dim)
+	res.data = bitset.MustNew(uint(dim * dim))
 	res.color = color
 	return res
 }
