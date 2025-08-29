@@ -155,12 +155,7 @@ func (qr *qrcode) calcPenaltyRule3() uint {
 
 func (qr *qrcode) calcPenaltyRule4() uint {
 	totalNum := qr.data.Len()
-	trueCnt := 0
-	for i := range totalNum {
-		if qr.data.Test(i) {
-			trueCnt++
-		}
-	}
+	trueCnt := qr.data.Count()
 	percDark := float64(trueCnt) * 100 / float64(totalNum)
 	floor := math.Abs(math.Floor(percDark/5) - 10)
 	ceil := math.Abs(math.Ceil(percDark/5) - 10)
