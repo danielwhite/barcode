@@ -107,6 +107,13 @@ func (bl *BitList) GetBytes() []byte {
 	return result[:bytesRequired(bl.count)]
 }
 
+// GetWords returns the BitList as an array of words.
+func (bl *BitList) GetWords() []uint {
+	result := make([]uint, len(bl.data))
+	copy(result, bl.data)
+	return result[:wordsRequired(bl.count)]
+}
+
 // IterateBytes iterates through all bytes contained in the BitList
 func (bl *BitList) IterateBytes() <-chan byte {
 	res := make(chan byte)

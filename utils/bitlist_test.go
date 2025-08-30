@@ -51,6 +51,25 @@ func TestBitList_GetBytes(t *testing.T) {
 	}
 }
 
+func TestBitList_GetWords(t *testing.T) {
+	want := []byte{1, 3, 5, 9, 13, 0, 0, 0}
+
+	bl := NewBitList(0)
+	for _, x := range want {
+		bl.AddByte(x)
+	}
+
+	var got []byte
+	for _, x := range bl.GetWords() {
+		for s := wordSize - 8; s >= 0; s -= 8 {
+			got = append(got, byte(x>>s))
+		}
+	}
+	if !bytes.Equal(want, got) {
+		t.Errorf("GetWords() = %b, want %b", got, want)
+	}
+}
+
 func TestBitList_IterateBytes(t *testing.T) {
 	data := []byte{1, 3, 5, 9, 13}
 	bl := NewBitList(0)
