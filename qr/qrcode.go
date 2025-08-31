@@ -110,6 +110,12 @@ func (qr *qrcode) calcPenaltyRule2() uint {
 }
 
 func (qr *qrcode) calcPenaltyRule3() uint {
+	return qr.calcPenaltyRule3_limit(math.MaxUint)
+}
+
+// calcPenaltyRule3_limit estimates the penalty and returns as soon as
+// max has been reached.
+func (qr *qrcode) calcPenaltyRule3_limit(max uint) uint {
 	pattern1 := []bool{true, false, true, true, true, false, true, false, false, false, false}
 	pattern2 := []bool{false, false, false, false, true, false, true, true, true, false, true}
 
@@ -142,6 +148,9 @@ func (qr *qrcode) calcPenaltyRule3() uint {
 			}
 			if pattern1YFound || pattern2YFound {
 				result += 40
+			}
+			if result > max {
+				return result
 			}
 		}
 	}

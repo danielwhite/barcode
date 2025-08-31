@@ -3,6 +3,7 @@ package qr
 
 import (
 	"image"
+	"math"
 
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/utils"
@@ -127,7 +128,8 @@ func render(data []byte, vi *versionInfo, color barcode.ColorScheme) *qrcode {
 		curBitNo++
 	}
 
-	lowestPenalty := ^uint(0)
+	lowestPenalty := uint(math.MaxUint)
+	lowestRule3Penalty := uint(math.MaxUint)
 	lowestPenaltyIdx := -1
 	for i := 0; i < 8; i++ {
 		// Penalty calculation is expensive, especially rule 3.
@@ -144,12 +146,14 @@ func render(data []byte, vi *versionInfo, color barcode.ColorScheme) *qrcode {
 		if p >= lowestPenalty {
 			continue
 		}
-		p += results[i].calcPenaltyRule3()
+		rule3penalty := results[i].calcPenaltyRule3_limit(lowestRule3Penalty)
+		p += rule3penalty
 		if p >= lowestPenalty {
 			continue
 		}
 
 		lowestPenalty = p
+		lowestRule3Penalty = rule3penalty
 		lowestPenaltyIdx = i
 	}
 	return results[lowestPenaltyIdx]
