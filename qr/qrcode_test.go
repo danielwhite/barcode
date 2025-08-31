@@ -81,16 +81,55 @@ func Test_Penalty2(t *testing.T) {
 }
 
 func Test_Penalty3(t *testing.T) {
-	runTest := func(content string, result uint) {
-		code, _ := Encode(content, L, AlphaNumeric)
-		qr := code.(*qrcode)
-		if qr.calcPenaltyRule3() != result {
-			t.Errorf("Failed Penalty Rule 3 for content %q got %d but expected %d", content, qr.calcPenaltyRule3(), result)
+	// A 1:1:3:1:1 ratio (dark:light:dark:light:dark) pattern preceded
+	// by a light area 4 modules wide imposes a 40 point penalty.
+	pattern := []bool{true, false, true, true, true, false, true}
+
+	setPatternY := func(qr *qrcode, x, y int) {
+		for i, bit := range pattern {
+			qr.Set(x, y+i, bit)
 		}
 	}
-	runTest("A", 80)
-	runTest("FOO", 40)
-	runTest("0815", 0)
+	setPatternX := func(qr *qrcode, x, y int) {
+		for i, bit := range pattern {
+			qr.Set(x+i, y, bit)
+		}
+	}
+	checkPenalty := func(t *testing.T, qr *qrcode, want uint) {
+		t.Helper()
+		if got := qr.calcPenaltyRule3(); got != want {
+			t.Errorf("calcPenaltyRule3() = %d, want %d", got, want)
+			t.Logf("qr(dim=%d): %b", qr.dimension, qr.data.GetBytes())
+		}
+	}
+
+	vi := &versionInfo{Version: 1}
+
+	// Horizontal pattern in top-left corner.
+	qr := newBarcode(vi.moduleWidth())
+	setPatternX(qr, 0, 0)
+	checkPenalty(t, qr, 40)
+
+	// Vertical pattern in top-left corner.
+	qr = newBarcode(vi.moduleWidth())
+	setPatternY(qr, 0, 0)
+	checkPenalty(t, qr, 40)
+
+	// Horizontal pattern ending bottom-right corner.
+	qr = newBarcode(vi.moduleWidth())
+	setPatternX(qr, vi.moduleWidth()-len(pattern), vi.moduleWidth()-1)
+	checkPenalty(t, qr, 40)
+
+	// Vertical pattern ending in bottom-right corner.
+	qr = newBarcode(vi.moduleWidth())
+	setPatternY(qr, vi.moduleWidth()-1, vi.moduleWidth()-len(pattern))
+	checkPenalty(t, qr, 40)
+
+	// Matches of both patterns on the horizontal and vertical axes.
+	qr = newBarcode(vi.moduleWidth())
+	setPatternX(qr, 5, 5)
+	setPatternY(qr, 14, 8)
+	checkPenalty(t, qr, 160)
 }
 
 func Test_Penalty4(t *testing.T) {
