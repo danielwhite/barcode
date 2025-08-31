@@ -68,7 +68,7 @@ func Test_TotalDataBytes(t *testing.T) {
 }
 
 func Test_ModulWidth(t *testing.T) {
-	if testvi.modulWidth() != 45 {
+	if testvi.moduleWidth() != 45 {
 		t.Fail()
 	}
 }

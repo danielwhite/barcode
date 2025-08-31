@@ -73,7 +73,7 @@ func Encode(content string, level ErrorCorrectionLevel, mode Encoding) (barcode.
 }
 
 func render(data []byte, vi *versionInfo, color barcode.ColorScheme) *qrcode {
-	dim := vi.modulWidth()
+	dim := vi.moduleWidth()
 	results := make([]*qrcode, 8)
 	for i := 0; i < 8; i++ {
 		results[i] = newBarCodeWithColor(dim, color)
@@ -217,7 +217,7 @@ func iterateModules(occupied *qrcode) <-chan image.Point {
 }
 
 func drawFinderPatterns(vi *versionInfo, set func(int, int, bool)) {
-	dim := vi.modulWidth()
+	dim := vi.moduleWidth()
 	drawPattern := func(xoff int, yoff int) {
 		for x := -1; x < 8; x++ {
 			for y := -1; y < 8; y++ {
@@ -308,7 +308,7 @@ func drawFormatInfo(vi *versionInfo, usedMask int, set func(int, int, bool)) {
 	}
 
 	if len(formatInfo) == 15 {
-		dim := vi.modulWidth()
+		dim := vi.moduleWidth()
 		set(0, 8, formatInfo[0])
 		set(1, 8, formatInfo[1])
 		set(2, 8, formatInfo[2])
@@ -385,7 +385,7 @@ func drawVersionInfo(vi *versionInfo, set func(int, int, bool)) {
 
 	if ok && len(versionInfoBits) > 0 {
 		for i := 0; i < len(versionInfoBits); i++ {
-			x := (vi.modulWidth() - 11) + i%3
+			x := (vi.moduleWidth() - 11) + i%3
 			y := i / 3
 			set(x, y, versionInfoBits[len(versionInfoBits)-i-1])
 			set(y, x, versionInfoBits[len(versionInfoBits)-i-1])

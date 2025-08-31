@@ -254,7 +254,7 @@ func (vi *versionInfo) charCountBits(m encodingMode) byte {
 	}
 }
 
-func (vi *versionInfo) modulWidth() int {
+func (vi *versionInfo) moduleWidth() int {
 	return ((int(vi.Version) - 1) * 4) + 21
 }
 
@@ -264,7 +264,7 @@ func (vi *versionInfo) alignmentPatternPlacements() []int {
 	}
 
 	first := 6
-	last := vi.modulWidth() - 7
+	last := vi.moduleWidth() - 7
 	space := float64(last - first)
 	count := int(math.Ceil(space/28)) + 1
 
