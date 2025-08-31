@@ -5,9 +5,12 @@ import (
 	"math/rand/v2"
 	"strings"
 	"testing"
+
+	"github.com/boombuler/barcode"
 )
 
 type test struct {
+	Name   string
 	Text   string
 	Mode   Encoding
 	ECL    ErrorCorrectionLevel
@@ -16,6 +19,35 @@ type test struct {
 
 var tests = []test{
 	{
+		Name: "Numeric: Version 1",
+		Text: "1",
+		Mode: Numeric,
+		ECL:  L,
+		Result: `
++++++++..+.++.+++++++
++.....+..+++..+.....+
++.+++.+.++.++.+.+++.+
++.+++.+..+.+..+.+++.+
++.+++.+...+.+.+.+++.+
++.....+.....+.+.....+
++++++++.+.+.+.+++++++
+........++.++........
++++.++++++++.++...+..
+...+.+..+.+...+...++.
+++.+..++++..+...+...+
+..++.+.+.+....+...++.
+..+.++++....+.+.+.+++
+........+.++.+.+.+.+.
++++++++.+..+.+++.++++
++.....+.+..+++.+++.+.
++.+++.+.+..+.+++.++.+
++.+++.+..+....+...++.
++.+++.+.+...+...+...+
++.....+.++....+...+..
++++++++.+.+.+.+.+.+.+`,
+	},
+	{
+		Name: "Tiny Text",
 		Text: "hello world",
 		Mode: Unicode,
 		ECL:  H,
@@ -92,26 +124,31 @@ func imgStrToBools(str string) []bool {
 
 func Test_Encode(t *testing.T) {
 	for _, tst := range tests {
-		res, err := Encode(tst.Text, tst.ECL, tst.Mode)
-		if err != nil {
-			t.Error(err)
-		}
-		qrCode, ok := res.(*qrcode)
-		if !ok {
-			t.Fail()
-		}
-		testRes := imgStrToBools(tst.Result)
-		if (qrCode.dimension * qrCode.dimension) != len(testRes) {
-			t.Fail()
-		}
-		t.Logf("dim %d", qrCode.dimension)
-		for i := 0; i < len(testRes); i++ {
-			x := i % qrCode.dimension
-			y := i / qrCode.dimension
-			if qrCode.Get(x, y) != testRes[i] {
-				t.Errorf("Failed at index %d", i)
+		t.Run(tst.Name, func(t *testing.T) {
+			res, err := Encode(tst.Text, tst.ECL, tst.Mode)
+			if err != nil {
+				t.Error(err)
 			}
-		}
+			qrCode, ok := res.(*qrcode)
+			if !ok {
+				t.Fail()
+			}
+			testRes := imgStrToBools(tst.Result)
+			if (qrCode.dimension * qrCode.dimension) != len(testRes) {
+				t.Fail()
+			}
+			t.Logf("dim %d", qrCode.dimension)
+			for i := 0; i < len(testRes); i++ {
+				x := i % qrCode.dimension
+				y := i / qrCode.dimension
+				if qrCode.Get(x, y) != testRes[i] {
+					t.Errorf("Failed at index %d", i)
+				}
+			}
+			if t.Failed() {
+				t.Logf("Barcode:\n%s", asciiBarcode(res))
+			}
+		})
 	}
 }
 
@@ -184,4 +221,36 @@ func BenchmarkEncode(b *testing.B) {
 			}
 		})
 	}
+}
+
+// asciiBarcode returns an ASCII art encoding of a barcode.
+//
+// Encoding assumes a black and white image with one pixel per QR module.
+//
+// Dark and light pixels are encoded as '+' and '.' respectively.
+func asciiBarcode(bc barcode.Barcode) string {
+	const dark = '+'
+	const light = '.'
+
+	// Handle optional colour scheme through interface promotion.
+	foreground := barcode.ColorScheme16.Foreground
+	if bc, ok := bc.(barcode.BarcodeColor); ok {
+		foreground = bc.ColorScheme().Foreground
+	}
+
+	var sb strings.Builder
+	for x := 0; x < bc.Bounds().Max.X; x++ {
+		if x > 0 {
+			sb.WriteByte('\n')
+		}
+		for y := 0; y < bc.Bounds().Max.Y; y++ {
+			if bc.At(y, x) == foreground {
+				sb.WriteByte(dark)
+			} else {
+				sb.WriteByte(light)
+			}
+		}
+
+	}
+	return sb.String()
 }
