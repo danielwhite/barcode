@@ -9,6 +9,7 @@ import (
 )
 
 type test struct {
+	Name   string
 	Text   string
 	Mode   Encoding
 	ECL    ErrorCorrectionLevel
@@ -16,7 +17,41 @@ type test struct {
 }
 
 var tests = []test{
+	// Example from ISO/IEC 18004:2015(E), Annex I.
+	//
+	// The standard has mask 2 as the correctly result, but the
+	// calculation of penalties appear to be correct and choose
+	// mask 0 instead.
 	{
+		Name: "Numeric: Version 1",
+		Text: "01234567",
+		Mode: Numeric,
+		ECL:  M,
+		Result: `
++++++++...+++.+++++++
++.....+.+++...+.....+
++.+++.+..++...+.+++.+
++.+++.+..+.++.+.+++.+
++.+++.+.++.++.+.+++.+
++.....+....+..+.....+
++++++++.+.+.+.+++++++
+.....................
++.+.+.+...+.+...+..+.
+++.+....+.++.+.+...+.
+...++.+++.++.+++.+++.
+++..++.+.+.+++.++..+.
+..+..+++.+++.+++....+
+........+.+...+....+.
++++++++.....+...+...+
++.....+...+...+..+.++
++.+++.+.+++.+.+.+++.+
++.+++.+..+.+.+.+.+++.
++.+++.+.++.+.+++..+.+
++.....+....+++.+++...
++++++++.+..+.+++..+.+`,
+	},
+	{
+		Name: "Tiny Text",
 		Text: "hello world",
 		Mode: Unicode,
 		ECL:  H,
@@ -80,11 +115,13 @@ func Test_InvalidEncoding(t *testing.T) {
 
 func Test_Encode(t *testing.T) {
 	for _, tst := range tests {
-		res, err := Encode(tst.Text, tst.ECL, tst.Mode)
-		if err != nil {
-			t.Error(err)
-		}
-		checkBarcode(t, res, strings.TrimSpace(tst.Result))
+		t.Run(tst.Name, func(t *testing.T) {
+			res, err := Encode(tst.Text, tst.ECL, tst.Mode)
+			if err != nil {
+				t.Error(err)
+			}
+			checkBarcode(t, res, strings.TrimSpace(tst.Result))
+		})
 	}
 }
 
