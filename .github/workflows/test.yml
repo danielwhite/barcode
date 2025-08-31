@@ -21,6 +21,9 @@ jobs:
         go-version:
           - stable
           - oldstable
+        arch:
+          - amd64
+          - 386
 
     steps:
     - uses: actions/checkout@v4
@@ -36,4 +39,6 @@ jobs:
         cache: false
 
     - name: Test
+      env:
+        GOARCH: ${{ matrix.arch }}
       run: go test -v ./...
