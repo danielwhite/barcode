@@ -219,6 +219,7 @@ func encodeText(text []rune, submode subMode) (subMode, []int) {
 			} else {
 				submode = subUpper
 				tmp = append(tmp, 29) //upper latch
+				continue
 			}
 		}
 		idx++
